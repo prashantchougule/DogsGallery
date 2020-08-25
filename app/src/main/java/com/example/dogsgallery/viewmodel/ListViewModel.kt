@@ -15,6 +15,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableSingleObserver
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
+import java.lang.NumberFormatException
 
 class ListViewModel(application : Application) : BaseViewModel(application) {
 
@@ -27,11 +28,21 @@ class ListViewModel(application : Application) : BaseViewModel(application) {
     val loading = MutableLiveData<Boolean>()
 
     fun refresh(){
+        checkCacheDuration()
         val updateTime = prefHelper.getUpdateTime()
         if(updateTime != null && updateTime != 0L && System.nanoTime() - updateTime < refrshTime){
             fetchFromDatabase()
         }else{
             fetchFromRemote()
+        }
+    }
+    private fun checkCacheDuration(){
+        val cachePreferenceInt = prefHelper?.getCacheDuration()
+        try {
+            val duration = cachePreferenceInt?.toInt() ?: 5 * 60
+            refrshTime = duration.times(1000 * 1000 * 1000L)
+        }catch (e:NumberFormatException){
+            e.printStackTrace()
         }
     }
 
